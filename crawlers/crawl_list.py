@@ -45,6 +45,10 @@ class CrawlListCrawler(BaseCrawler):
             if not candidates:
                 await self.gs.log_event("Crawler", "LIST_NO_CANDIDATE", source_id, "SKIP", f"0 candidates: {list_url}")
                 return
+            
+            # Limit number of items per source (configurable via Google Sheets "Max_Items" column)
+            max_items = int(source.get("Max_Items", 8))
+            candidates = candidates[:max_items]
 
             # 3. Concurrently fetch candidate articles
             async def process_candidate(raw_url):
