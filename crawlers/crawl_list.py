@@ -51,6 +51,10 @@ class CrawlListCrawler(BaseCrawler):
                 item_uuid = make_item_uuid(raw_url)
                 list_page_title = link_map.get(raw_url, "")
                 try:
+                    # Skip if URL already exists in DATA_Raw
+                    if raw_url in url_map:
+                        return
+                    
                     md_text = await self.jina.read_markdown(
                         raw_url, 
                         self.session, 
