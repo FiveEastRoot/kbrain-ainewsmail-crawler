@@ -85,11 +85,24 @@ class CrawlListCrawler(BaseCrawler):
                             parts = re.split(r'(?i)^Abstract\s*\n', text, maxsplit=1, flags=re.MULTILINE)
                             if len(parts) > 1:
                                 text = "Abstract\n\n" + parts[1].strip()
+                        # Strip comment/login footer
+                        text = re.split(r'(?m)^Comment\s*$|Sign up.*to comment|\[- \[x\] Upvote', text, maxsplit=1)[0].strip()
                     elif source_id in ("spri_reports", "spri_research"):
                         # Remove huge top menu of SPRi
                         parts = re.split(r'(?i)조회수\s+\d+|작성일\s+[\d\.\-]+', text, maxsplit=1)
                         if len(parts) > 1:
                             text = parts[1].strip()
+                        # Strip PDF/HTML download buttons and SNS sharing section
+                        text = re.sub(r'!\[Image[^\]]*\]\([^\)]*(?:down_icon|html_icon|sns_icon|copy_link)[^\)]*\)[^\n]*', '', text)
+                        text = re.sub(r'PDF\s*다운로드', '', text)
+                        text = re.sub(r'\[HTML\s*보기\]\([^\)]+\)', '', text)
+                        text = re.split(r'공유\s*열기', text, maxsplit=1)[-1].strip()
+                        # Strip SNS share icon links (naver, facebook, twitter, kakao, band, telegram)
+                        text = re.sub(r'\*\s+\[!\[Image[^\]]*(?:공유|연결|연동|복사)[^\]]*\]\([^\)]+\)\]\([^\)]+\s*"[^"]*"\)', '', text)
+                        text = re.sub(r'\[!\[Image[^\]]*(?:공유|연결|연동|복사)[^\]]*\]\([^\)]+\)\]\([^\)]+\)', '', text)
+                        # Strip 글자크기 controls
+                        text = re.split(r'글자크기', text, maxsplit=1)[0].strip()
+                        text = re.sub(r'\n{3,}', '\n\n', text).strip()
                     elif source_id == "deepmind_blog":
                         # Remove top formatting for Google Blog like Share/Mail buttons
                         parts = re.split(r'(?ims)(?:Share|Copied)\s*\n\s*!\[Image[^\]]*\]\([^\)]+\)\s*\n', text, maxsplit=1)
@@ -103,6 +116,8 @@ class CrawlListCrawler(BaseCrawler):
                         parts = re.split(r'(?i)조회수\s+\d+', text, maxsplit=1)
                         if len(parts) > 1:
                             text = parts[1].strip()
+                        # Strip footer: social share buttons, 목록, 다음글/이전글, 대표전화, etc.
+                        text = re.split(r'\[트위터\]|\[페이스북\]|\[구글 플러스\]|\[인쇄\]|(?m)^목록\s*$|_\\?_다음글|_\\?_이전글|\[_TOP_\]|대표전화|개인정보처리방침', text, maxsplit=1)[0].strip()
                     
                     if len(text) > max_length:
                         text = text[:max_length] + "\n...[Max_Length cut]"
