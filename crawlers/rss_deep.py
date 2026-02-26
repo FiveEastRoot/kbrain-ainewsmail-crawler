@@ -79,11 +79,15 @@ class RssDeepCrawler(BaseCrawler):
                     
                     # Source-specific cleaning
                     if source_id == "hf_blog":
-                        # HF Blog: strip "Back to Articles", author avatars at top
-                        # Content starts at first [](url#section) anchor heading
-                        m = re.search(r'\[]\(https://huggingface\.co/blog/[^)]+#[^)]+\)\s+\S', text)
-                        if m:
-                            text = text[m.start():].strip()
+                        # HF Blog: skip past author cards (last "Follow" link)
+                        last_follow = text.rfind('Follow](https://huggingface.co/')
+                        if last_follow > 0:
+                            after = text[last_follow:]
+                            m = re.search(r'(?m)^\[]\(https://huggingface\.co/blog/[^)]+#[^)]+\)\s|^#{1,3}\s+\S', after)
+                            if m:
+                                text = after[m.start():].strip()
+                        # Strip HF site footer
+                        text = re.split(r'\[Models\]\(https://huggingface\.co/models\)|\[Terms\]|terms-of-service', text, maxsplit=1)[0].strip()
                     elif source_id == "nvidia_dev_blog":
                         # NVIDIA Blog: strip huge nav header, content starts after Published Time + title
                         # Look for the first paragraph after the hero image
@@ -120,13 +124,11 @@ class RssDeepCrawler(BaseCrawler):
                         text = re.split(r'OpenAI ©|Back to index|\(opens in a new window\)\s*$', text, maxsplit=1)[0].strip()
                     elif source_id == "kisa_notice":
                         # KISA: strip huge Korean gov nav menu
-                        # Content starts after "본문 시작" or article title area
                         parts = re.split(r'(?m)등록일\s+\d{4}[.\-]\d{2}[.\-]\d{2}|작성일\s+\d{4}[.\-]\d{2}[.\-]\d{2}|조회수\s+\d+', text, maxsplit=1)
                         if len(parts) > 1:
                             text = parts[1].strip()
-                        # Strip footer
-                        text = re.split(r'Copyright\(C\)', text, maxsplit=1)[0].strip()
-                        text = re.split(r'Now Loading', text, maxsplit=1)[0].strip()
+                        # Strip footer: attachments, prev/next, nav, SNS, address
+                        text = re.split(r'(?m)^첨부파일|^\*\s+이전글|^\*\s+다음글|^목록\s*$|알림마당|Copyright\(C\)|Now Loading|개인정보 처리방침|KISA소개', text, maxsplit=1)[0].strip()
                     
                     if len(text) > max_length:
                         text = text[:max_length] + "\n...[Max_Length cut]"

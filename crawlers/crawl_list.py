@@ -89,8 +89,8 @@ class CrawlListCrawler(BaseCrawler):
                             parts = re.split(r'(?i)^Abstract\s*\n', text, maxsplit=1, flags=re.MULTILINE)
                             if len(parts) > 1:
                                 text = "Abstract\n\n" + parts[1].strip()
-                        # Strip comment/login footer
-                        text = re.split(r'(?m)^Comment\s*$|Sign up.*to comment|\[- \[x\] Upvote', text, maxsplit=1)[0].strip()
+                        # Strip comment/community/login footer
+                        text = re.split(r'(?m)^### Community|^Comment\s*$|Sign up.*to comment|\[- \[x\] Upvote|^Reply\s*$|Upload images.*clicking here', text, maxsplit=1)[0].strip()
                     elif source_id in ("spri_reports", "spri_research"):
                         # Remove huge top menu of SPRi
                         parts = re.split(r'(?i)조회수\s+\d+|작성일\s+[\d\.\-]+', text, maxsplit=1)
