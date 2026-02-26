@@ -1,0 +1,53 @@
+# =====================================================
+# 매일 KST 16:30에 실행 → 전일 16:00 ~ 당일 16:00 데이터 수집
+# =====================================================
+# KST 16:30 = UTC 07:30 (서머타임 없음)
+# time_filter.py가 자동으로 "어제 16:00 KST ~ 오늘 16:00 KST" 윈도우를 계산함
+
+name: Daily Crawler
+
+on:
+  # 매일 UTC 07:30 (= KST 16:30)에 자동 실행
+  schedule:
+    - cron: '30 7 * * *'
+
+  # 수동 실행도 가능 (GitHub UI에서 "Run workflow" 버튼)
+  workflow_dispatch:
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15  # 최대 15분 (보통 5~7분 소요)
+
+    steps:
+      # 1. 코드 체크아웃
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      # 2. Python 설치
+      - name: Python 3.13 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'  # pip 캐시로 재설치 속도 향상
+
+      # 3. 의존성 설치
+      - name: 의존성 설치
+        run: pip install -r requirements.txt
+
+      # 4. 구글 서비스 계정 키 파일 생성 (GitHub Secret → 파일로)
+      - name: 구글 서비스 계정 키 생성
+        run: echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > service_account.json
+
+      # 5. 크롤러 실행
+      - name: 크롤러 실행
+        env:
+          JINA_API_KEY: ${{ secrets.JINA_API_KEY }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          GOOGLE_SERVICE_ACCOUNT_FILE: service_account.json
+        run: python main.py
+
+      # 6. 서비스 계정 키 파일 삭제 (보안)
+      - name: 키 파일 정리
+        if: always()
+        run: rm -f service_account.json
