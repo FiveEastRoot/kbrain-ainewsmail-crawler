@@ -53,16 +53,20 @@ CRAWLLIST_RULES = {
     "spri_reports": {
         "host": "spri.kr",
         "allow": [
-            r"^https://spri\.kr/posts/view/\d+(?:\?code=[^#]+)?$"
+            r"^https://spri\.kr/posts/view/\d+(?:\?.*)?$"
         ],
-        "deny": []
+        "deny": [
+            r"\?code=notice"
+        ]
     },
     "spri_research": {
         "host": "spri.kr",
         "allow": [
-            r"^https://spri\.kr/posts/view/\d+(?:\?code=[^#]+)?$"
+            r"^https://spri\.kr/posts/view/\d+(?:\?.*)?$"
         ],
-        "deny": []
+        "deny": [
+            r"\?code=notice"
+        ]
     },
     "nia_aihub": {
         "host": "www.nia.or.kr",

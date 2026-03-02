@@ -108,8 +108,11 @@ class CrawlListCrawler(BaseCrawler):
                         # Strip SNS share icon links (naver, facebook, twitter, kakao, band, telegram)
                         text = re.sub(r'\*\s+\[!\[Image[^\]]*(?:공유|연결|연동|복사)[^\]]*\]\([^\)]+\)\]\([^\)]+\s*"[^"]*"\)', '', text)
                         text = re.sub(r'\[!\[Image[^\]]*(?:공유|연결|연동|복사)[^\]]*\]\([^\)]+\)\]\([^\)]+\)', '', text)
-                        # Strip 글자크기 controls
-                        text = re.split(r'글자크기', text, maxsplit=1)[0].strip()
+                        # 글자크기 컨트롤 이후가 실제 본문: '글자크기' 뒤쪽 텍스트를 취함
+                        parts_fz = re.split(r'글자크기', text, maxsplit=1)
+                        if len(parts_fz) > 1:
+                            # '글자크기+ 글자크기 크게- 글자크기 작게' 패턴도 제거
+                            text = re.sub(r'^[\+\s\-가-힣\s]*\n', '', parts_fz[1], count=1).strip()
                         text = re.sub(r'\n{3,}', '\n\n', text).strip()
                     elif source_id == "deepmind_blog":
                         # Remove top formatting for Google Blog like Share/Mail buttons
@@ -125,7 +128,7 @@ class CrawlListCrawler(BaseCrawler):
                         if len(parts) > 1:
                             text = parts[1].strip()
                         # Strip footer: social share buttons, 목록, 다음글/이전글, 대표전화, etc.
-                        text = re.split(r'\[트위터\]|\[페이스북\]|\[구글 플러스\]|\[인쇄\]|(?m)^목록\s*$|_\\?_다음글|_\\?_이전글|\[_TOP_\]|대표전화|개인정보처리방침', text, maxsplit=1)[0].strip()
+                        text = re.split(r'\[트위터\]|\[페이스북\]|\[구글 플러스\]|\[인쇄\]|^목록\s*$|_\\?_다음글|_\\?_이전글|\[_TOP_\]|대표전화|개인정보처리방침', text, maxsplit=1, flags=re.MULTILINE)[0].strip()
                     
                     if len(text) > max_length:
                         text = text[:max_length] + "\n...[Max_Length cut]"
