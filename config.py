@@ -60,12 +60,19 @@ CRAWLLIST_RULES = {
         ]
     },
     "spri_research": {
-        "host": "spri.kr",
-        "allow": [
-            r"^https://spri\.kr/posts/view/\d+(?:\?.*)?$"
-        ],
+        "allow_external": True,   # pages/media 외부 언론사 링크 수집
+        "allow": [],              # 제한 없이 수집 (deny로 필터)
         "deny": [
-            r"\?code=notice"
+            r"^https?://spri\.kr/?$",               # spri 홈페이지
+            r"spri\.kr/pages/",                     # spri 내부 페이지
+            r"spri\.kr/posts\?",                    # 게시판 목록 URL
+            r"spri\.kr/changes",                    # 연혁
+            r"spri\.kr/lib/",                       # 리소스
+            r"spri\.kr/spri/",                      # 이미지 등
+            r"stat\.spri\.kr",                      # 통계 사이트
+            r"kogl\.or\.kr",                        # 공공누리
+            r"wa\.or\.kr",                          # 웹접근성
+            r"spri\.kr/posts/view/\d+\?code=notice",  # 공지(개인정보 등)
         ]
     },
     "nia_aihub": {

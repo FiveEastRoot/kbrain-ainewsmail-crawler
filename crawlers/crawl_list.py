@@ -168,6 +168,7 @@ class CrawlListCrawler(BaseCrawler):
 
     def _filter_candidates(self, source_id: str, list_url: str, urls: list[str], rule: dict) -> list[str]:
         base_host = get_host(list_url)
+        allow_external = rule.get("allow_external", False) if rule else False
         out = []
         
         for u in urls:
@@ -176,21 +177,24 @@ class CrawlListCrawler(BaseCrawler):
                 continue
                 
             h = get_host(u)
-            if rule and rule.get("host"):
+            if allow_external:
+                pass  # 외부 도메인도 허용, deny/allow 패턴으로만 필터
+            elif rule and rule.get("host"):
                 if h != rule["host"]: continue
             else:
                 if h != base_host: continue
                 
-            # 흔한 네비용 단어 제거
-            if re.search(r'/(tag|tags|category|categories|author|about|privacy|terms|login|subscribe)\b', u, re.IGNORECASE):
-                continue
+            # 흔한 네비용 단어 제거 (allow_external 소스는 외부 사이트라 적용 안 함)
+            if not allow_external:
+                if re.search(r'/(tag|tags|category|categories|author|about|privacy|terms|login|subscribe)\b', u, re.IGNORECASE):
+                    continue
                 
             out.append(u)
             
         if rule:
             if rule.get("deny"):
                 out = [u for u in out if not any(re.search(rx, u, re.IGNORECASE) for rx in rule["deny"])]
-            if rule.get("allow"):
+            if rule.get("allow"):  # allow 리스트가 비어있으면 전체 허용
                 out = [u for u in out if any(re.search(rx, u, re.IGNORECASE) for rx in rule["allow"])]
                 
         return unique_preserve_order(out)
