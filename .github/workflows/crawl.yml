@@ -8,9 +8,9 @@
 name: Daily Crawler
 
 on:
-  # 매일 UTC 07:17 (= KST 16:17)에 자동 실행
+  # 매일 UTC 06:43 (= KST 15:43)에 자동 실행
   schedule:
-    - cron: '17 7 * * *'
+    - cron: '43 6 * * *'
 
   # 수동 실행도 가능 (GitHub UI에서 "Run workflow" 버튼)
   workflow_dispatch:
