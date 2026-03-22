@@ -8,29 +8,17 @@ KST = pytz.timezone('Asia/Seoul')
 
 def get_collection_window(now: datetime.datetime = None) -> Tuple[datetime.datetime, datetime.datetime]:
     """
-    Returns the time window: Yesterday 16:00 KST to Today 16:00 KST.
-    If the current time is before 16:00 KST today, it returns the window for the *previous* cycle
-    (Day BEFORE Yesterday 16:00 to Yesterday 16:00) to ensure we always have a full closed 24h window
-    if running early, or exactly the target 24h window if running after 16:00.
-    
-    Assuming this runs daily around 16:10 KST.
+    Returns the time window: (now - 24h) ~ now (KST).
+    Admin 페이지에서 버튼을 누른 시각을 기준으로 이전 24시간을 수집합니다.
     """
     if now is None:
         now = datetime.datetime.now(pytz.utc).astimezone(KST)
     else:
         now = now.astimezone(KST)
 
-    # 16시 지났는지 확인
-    # 만약 현재가 5월 2일 16시 10분이라면: start = 5월 1일 16:00, end = 5월 2일 16:00
-    # 만약 현재가 5월 2일 10시 00분이라면: start = 4월 30일 16:00, end = 5월 1일 16:00 (어제 마감된 윈도우)
-    
-    if now.hour >= 16:
-        end_time = now.replace(hour=16, minute=0, second=0, microsecond=0)
-        start_time = end_time - datetime.timedelta(days=1)
-    else:
-        end_time = now.replace(hour=16, minute=0, second=0, microsecond=0) - datetime.timedelta(days=1)
-        start_time = end_time - datetime.timedelta(days=1)
-        
+    end_time = now
+    start_time = now - datetime.timedelta(hours=24)
+
     return start_time, end_time
 
 def parse_date_robust(date_string: str) -> Optional[datetime.datetime]:
