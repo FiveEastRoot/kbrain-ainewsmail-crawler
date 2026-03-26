@@ -9,6 +9,10 @@ on:
   # 수동 실행만 허용 (Admin 페이지 버튼 → GitHub API → workflow_dispatch)
   workflow_dispatch:
 
+env:
+  # Node.js 24 강제 적용 (actions/checkout, actions/setup-python Node.js 20 deprecated 대응)
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   crawl:
     runs-on: ubuntu-latest
@@ -17,11 +21,11 @@ jobs:
     steps:
       # 1. 코드 체크아웃
       - name: 코드 체크아웃
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
 
       # 2. Python 설치
       - name: Python 3.13 설치
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.5.0
         with:
           python-version: '3.13'
           cache: 'pip'  # pip 캐시로 재설치 속도 향상
