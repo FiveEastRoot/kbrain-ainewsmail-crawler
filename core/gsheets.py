@@ -1,7 +1,8 @@
-import json
 import os
 import uuid
 import datetime
+import gspread
+import gspread.exceptions
 import gspread_asyncio
 from google.oauth2.service_account import Credentials
 from core.time_filter import KST
@@ -90,17 +91,17 @@ class GoogleSheetsManager:
             # If absolute strictness is needed, batch updates are better.
             
     async def log_event(self, module_name: str, action_type: str, target_uuid: str, status: str, message: str):
-        """Logs an event to LOG_History."""
+        """Logs an event to LOG_History. Creates the sheet if it doesn't exist."""
         try:
             worksheet = await self.doc.worksheet(SHEET_LOG)
-        except gspread_asyncio.WorksheetNotFound:
-            worksheet = await self.doc.add_worksheet(title=SHEET_LOG, rows="1000", cols="7")
+        except gspread.exceptions.WorksheetNotFound:
+            # 시트가 없으면 새로 생성 후 헤더 추가
+            worksheet = await self.doc.add_worksheet(title=SHEET_LOG, rows=1000, cols=7)
             await worksheet.append_row(["Log_UUID", "Timestamp", "Module", "Action_Type", "Target_UUID", "Status", "Message"])
-            
-        # Timestamp formatted simply
+
         now_str = datetime.datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
         log_uuid = "LOG_" + str(uuid.uuid4()).replace("-", "")[:8]
-        
+
         row = [
             log_uuid,
             now_str,
