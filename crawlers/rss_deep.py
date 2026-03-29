@@ -22,12 +22,24 @@ class RssDeepCrawler(BaseCrawler):
         
         try:
             # 1. Fetch RSS XML
+            # Some gov/corp sites may drop SSL connections — retry with backoff.
             headers_req = {"User-Agent": "Mozilla/5.0 (Python Async RSS_DEEP)"}
-            async with self.session.get(feed_url, headers=headers_req) as response:
-                if response.status != 200:
-                    await self.gs.log_event("Crawler", "SOURCE_HTTP_FAIL", source_id, "FAIL", f"HTTP {response.status} - {feed_url}")
-                    return
-                xml_content = await response.text()
+            xml_content = None
+            last_exc = None
+            for attempt in range(3):
+                try:
+                    async with self.session.get(feed_url, headers=headers_req) as response:
+                        if response.status != 200:
+                            await self.gs.log_event("Crawler", "SOURCE_HTTP_FAIL", source_id, "FAIL", f"HTTP {response.status} - {feed_url}")
+                            return
+                        xml_content = await response.text()
+                    break
+                except Exception as e:
+                    last_exc = e
+                    if attempt < 2:
+                        await asyncio.sleep(2 ** attempt)
+            if xml_content is None:
+                raise last_exc
                 
             feed = feedparser.parse(xml_content)
             

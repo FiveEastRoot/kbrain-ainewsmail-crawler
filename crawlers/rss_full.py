@@ -2,12 +2,15 @@ import feedparser
 import json
 import datetime
 import traceback
+import asyncio
 from typing import Dict, Any
 
 from crawlers.base import BaseCrawler
 from core.utils import ensure_https, normalize_url, make_item_uuid, strip_html
 from core.time_filter import parse_date_robust, is_within_window
 from config import MIN_TEXT_LEN
+
+MAX_RETRIES = 3
 
 class RssFullCrawler(BaseCrawler):
     async def crawl(self, source: Dict[str, Any], raw_index: tuple, window: tuple):
@@ -22,12 +25,24 @@ class RssFullCrawler(BaseCrawler):
             # Using aiohttp to fetch RSS xml is possible, but feedparser.parse can also take a URL.
             # However, feedparser is blocking on network if passed a URL directly.
             # Best practice: fetch raw text async, then pass to feedparser.
+            # Some gov sites (e.g. korea.kr) may drop SSL connections — retry with backoff.
             headers_req = {"User-Agent": "Mozilla/5.0 (Python Async RSS_FULL)"}
-            async with self.session.get(feed_url, headers=headers_req) as response:
-                if response.status != 200:
-                    await self.gs.log_event("Crawler", "SOURCE_HTTP_FAIL", source_id, "FAIL", f"HTTP {response.status} - {feed_url}")
-                    return
-                xml_content = await response.text()
+            xml_content = None
+            last_exc = None
+            for attempt in range(MAX_RETRIES):
+                try:
+                    async with self.session.get(feed_url, headers=headers_req) as response:
+                        if response.status != 200:
+                            await self.gs.log_event("Crawler", "SOURCE_HTTP_FAIL", source_id, "FAIL", f"HTTP {response.status} - {feed_url}")
+                            return
+                        xml_content = await response.text()
+                    break  # 성공 시 재시도 루프 탈출
+                except Exception as e:
+                    last_exc = e
+                    if attempt < MAX_RETRIES - 1:
+                        await asyncio.sleep(2 ** attempt)  # 1s, 2s 대기 후 재시도
+            if xml_content is None:
+                raise last_exc
                 
             feed = feedparser.parse(xml_content)
             

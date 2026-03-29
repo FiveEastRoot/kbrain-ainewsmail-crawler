@@ -1,6 +1,7 @@
 import asyncio
 import aiohttp
 import logging
+import ssl
 from config import TARGET_PHASE
 
 from core.gsheets import GoogleSheetsManager
@@ -50,7 +51,12 @@ async def main():
         return
 
     # Use a single aiohttp session for connection pooling
-    async with aiohttp.ClientSession() as session:
+    # Some gov sites (e.g. korea.kr) use non-standard SSL — relax verification to avoid connection drops
+    ssl_ctx = ssl.create_default_context()
+    ssl_ctx.check_hostname = False
+    ssl_ctx.verify_mode = ssl.CERT_NONE
+    connector = aiohttp.TCPConnector(ssl=ssl_ctx)
+    async with aiohttp.ClientSession(connector=connector) as session:
         # Initialize Crawlers
         crawler_map = {
             "RSS_FULL": RssFullCrawler(gs, jina, session),

@@ -27,7 +27,7 @@ jobs:
       - name: Python 3.13 설치
         uses: actions/setup-python@v5.5.0
         with:
-          python-version: '3.13'
+          python-version: '3.13.11'  # 고정: 자동 패치 업데이트로 인한 SSL 동작 변경 방지
           cache: 'pip'  # pip 캐시로 재설치 속도 향상
 
       # 3. 의존성 설치
